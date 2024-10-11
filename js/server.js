@@ -76,15 +76,25 @@ const server = http.createServer((req, res) => {
     });
     req.on("end", () => {
       const query = JSON.parse(body).query;
-      db.executeQuery(query, (err, result) => {
-        if (err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err.message }));
-        } else {
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: result }));
-        }
-      });
+
+      // Safeguard to only allow INSERT queries
+      if (query.trim().toUpperCase().startsWith("INSERT")) {
+        db.executeQuery(query, (err, result) => {
+          if (err) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+          } else {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: result }));
+          }
+        });
+      } else {
+        // Block non-INSERT queries
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({ error: "Only INSERT queries are allowed via POST" })
+        );
+      }
     });
   } else if (method === "GET") {
     const sqlQuery = parsedUrl.query.q;

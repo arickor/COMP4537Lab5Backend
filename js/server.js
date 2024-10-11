@@ -15,17 +15,34 @@ class Database {
   }
 
   createTable() {
-    const query = `
-            CREATE TABLE IF NOT EXISTS patient (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255),
-                age INT,
-                diagnosis TEXT
-            ) ENGINE=InnoDB;
-        `;
-    this.connection.query(query, (err, result) => {
+    const checkTableQuery = `
+        SELECT COUNT(*) AS count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'arickorc_comp4537lab5' AND table_name = 'patient';
+    `;
+
+    this.connection.query(checkTableQuery, (err, result) => {
       if (err) throw err;
-      console.log("Table created or exists already!");
+
+      // Check if table exists
+      const tableExists = result[0].count > 0;
+
+      if (!tableExists) {
+        const createQuery = `
+                CREATE TABLE patient (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255),
+                    age INT,
+                    diagnosis TEXT
+                ) ENGINE=InnoDB;
+            `;
+        this.connection.query(createQuery, (err, result) => {
+          if (err) throw err;
+          console.log("Table created successfully!");
+        });
+      } else {
+        console.log("Table already exists, skipping creation.");
+      }
     });
   }
 
@@ -39,9 +56,9 @@ class Database {
 
 const dbConfig = {
   host: "localhost",
-  user: "your-username",
-  password: "your-password",
-  database: "patient_db",
+  user: "arickorc_aric",
+  password: "P@$$w0rd12345",
+  database: "arickorc_comp4537lab5",
 };
 
 const db = new Database(dbConfig);
@@ -71,7 +88,9 @@ const server = http.createServer((req, res) => {
     });
   } else if (method === "GET") {
     const sqlQuery = parsedUrl.query.q;
-    if (sqlQuery.startsWith("SELECT")) {
+
+    // Check if sqlQuery is undefined or empty
+    if (sqlQuery && sqlQuery.startsWith("SELECT")) {
       db.executeQuery(sqlQuery, (err, result) => {
         if (err) {
           res.writeHead(400, { "Content-Type": "application/json" });
@@ -82,8 +101,12 @@ const server = http.createServer((req, res) => {
         }
       });
     } else {
-      res.writeHead(403, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Only SELECT queries allowed for GET" }));
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error: "Invalid query or missing query parameter 'q'.",
+        })
+      );
     }
   }
 });

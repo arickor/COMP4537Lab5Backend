@@ -30,10 +30,9 @@ class Database {
       if (!tableExists) {
         const createQuery = `
                 CREATE TABLE patient (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255),
-                    age INT,
-                    diagnosis TEXT
+                    patientid INT(11) AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100),
+                    dateOfBirth DATETIME
                 ) ENGINE=InnoDB;
             `;
         this.connection.query(createQuery, (err, result) => {
@@ -72,7 +71,7 @@ const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   // Handle preflight requests (OPTIONS method)
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.writeHead(200);
     res.end();
     return;
@@ -82,28 +81,28 @@ const server = http.createServer((req, res) => {
   let method = req.method;
 
   if (method === "POST") {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk.toString();
-    });
-    req.on("end", () => {
-      const query = JSON.parse(body).query;
+    // Fixed values to insert based on the image
+    const patients = [
+      { name: "Sara Brown", dateOfBirth: "1901-01-01" },
+      { name: "John Smith", dateOfBirth: "1941-01-01" },
+      { name: "Jack Ma", dateOfBirth: "1961-01-30" },
+      { name: "Elon Musk", dateOfBirth: "1999-01-01" },
+    ];
 
-      // Safeguard to only allow INSERT queries
-      if (query.trim().toUpperCase().startsWith("INSERT")) {
-        db.executeQuery(query, (err, result) => {
-          if (err) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: err.message }));
-          } else {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: result }));
-          }
-        });
+    // Insert each patient into the database
+    let query = "INSERT INTO patient (name, dateOfBirth) VALUES ";
+    const values = patients
+      .map((p) => `('${p.name}', '${p.dateOfBirth}')`)
+      .join(", ");
+    query += values;
+
+    db.executeQuery(query, (err, result) => {
+      if (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
       } else {
-        // Block non-INSERT queries
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Only INSERT queries are allowed via POST" }));
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: result }));
       }
     });
   } else if (method === "GET") {

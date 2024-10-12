@@ -81,28 +81,54 @@ const server = http.createServer((req, res) => {
   let method = req.method;
 
   if (method === "POST") {
-    // Fixed values to insert based on the image
-    const patients = [
-      { name: "Sara Brown", dateOfBirth: "1901-01-01" },
-      { name: "John Smith", dateOfBirth: "1941-01-01" },
-      { name: "Jack Ma", dateOfBirth: "1961-01-30" },
-      { name: "Elon Musk", dateOfBirth: "1999-01-01" },
-    ];
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
 
-    // Insert each patient into the database
-    let query = "INSERT INTO patient (name, dateOfBirth) VALUES ";
-    const values = patients
-      .map((p) => `('${p.name}', '${p.dateOfBirth}')`)
-      .join(", ");
-    query += values;
+    req.on("end", () => {
+      const requestData = JSON.parse(body);
 
-    db.executeQuery(query, (err, result) => {
-      if (err) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: err.message }));
+      // Check if a custom query is provided (from textarea) or fallback to static data
+      if (
+        requestData.query &&
+        requestData.query.trim().toUpperCase().startsWith("INSERT")
+      ) {
+        // Execute the custom INSERT query from the textarea
+        const query = requestData.query;
+        db.executeQuery(query, (err, result) => {
+          if (err) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+          } else {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: result }));
+          }
+        });
       } else {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: result }));
+        // If no query is provided, fallback to inserting the static rows
+        const patients = [
+          { name: "Sara Brown", dateOfBirth: "1901-01-01" },
+          { name: "John Smith", dateOfBirth: "1941-01-01" },
+          { name: "Jack Ma", dateOfBirth: "1961-01-30" },
+          { name: "Elon Musk", dateOfBirth: "1999-01-01" },
+        ];
+
+        let query = "INSERT INTO patient (name, dateOfBirth) VALUES ";
+        const values = patients
+          .map((p) => `('${p.name}', '${p.dateOfBirth}')`)
+          .join(", ");
+        query += values;
+
+        db.executeQuery(query, (err, result) => {
+          if (err) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+          } else {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: result }));
+          }
+        });
       }
     });
   } else if (method === "GET") {

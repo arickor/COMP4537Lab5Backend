@@ -66,6 +66,18 @@ db.connect();
 db.createTable();
 
 const server = http.createServer((req, res) => {
+  // Set CORS headers to allow cross-origin requests
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Allows all origins (for more security, replace '*' with Server 1's origin)
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight requests (OPTIONS method)
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
   const parsedUrl = url.parse(req.url, true);
   let method = req.method;
 
@@ -91,9 +103,7 @@ const server = http.createServer((req, res) => {
       } else {
         // Block non-INSERT queries
         res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({ error: "Only INSERT queries are allowed via POST" })
-        );
+        res.end(JSON.stringify({ error: "Only INSERT queries are allowed via POST" }));
       }
     });
   } else if (method === "GET") {

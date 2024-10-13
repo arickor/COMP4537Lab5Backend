@@ -66,7 +66,10 @@ db.createTable();
 
 const server = http.createServer((req, res) => {
   // Set CORS headers to allow cross-origin requests
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Allows all origins (for more security, replace '*' with Server 1's origin)
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://nice-ground-06ffb4610.5.azurestaticapps.net"
+  ); // Allows all origins (for more security, replace '*' with Server 1's origin)
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 

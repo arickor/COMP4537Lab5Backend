@@ -72,7 +72,11 @@ const server = http.createServer((req, res) => {
 
   // Handle preflight requests (OPTIONS method)
   if (req.method === "OPTIONS") {
-    res.writeHead(200);
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
     res.end();
     return;
   }
